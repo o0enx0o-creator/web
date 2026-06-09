@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الحمّامي للحاسوب</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary-color: #2c3e50; --accent-color: #3498db; --price-color: #27ae60; --bg-color: #f4f6f7; --card-bg: #ffffff; --text-color: #333333; --border-color: #e2e8f0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; }
+        body { background-color: var(--bg-color); padding: 20px; }
+        header { background: var(--primary-color); color: #fff; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .product-card { background: var(--card-bg); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); display: flex; flex-direction: column; }
+        .product-image { width: 100%; height: 150px; object-fit: contain; margin-bottom: 10px; }
+        .btn-add-cart { width: 100%; background: var(--primary-color); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; margin-top: auto; }
+        .floating-cart-trigger { position: fixed; bottom: 25px; left: 25px; background: #e74c3c; color: white; padding: 15px 25px; border-radius: 50px; cursor: pointer; z-index: 1000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .cart-sidebar { display: none; position: fixed; bottom: 90px; left: 25px; width: 350px; background: white; border: 2px solid var(--primary-color); padding: 20px; border-radius: 12px; z-index: 1000; max-height: 70vh; overflow-y: auto; }
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { background: white; padding: 20px; border-radius: 12px; width: 90%; max-width: 400px; }
+    </style>
+</head>
+<body>
+
+    <header><h1>الحمّامي للحاسوب</h1></header>
+
+    <button class="floating-cart-trigger" onclick="toggleCart()">🛒 السلة (<span id="cart-count">0</span>)</button>
+
+    <div class="products-grid" id="products-container"></div>
+
+    <div class="cart-sidebar" id="main-cart-sidebar">
+        <h2>سلة المشتريات</h2>
+        <div id="cart-items-container"></div>
+        <button class="btn-add-cart" onclick="openCheckout()">تأكيد الطلب</button>
+    </div>
+
+    <div class="modal" id="checkout-modal">
+        <div class="modal-content">
+            <h3>معلومات المستلم</h3>
+            <input type="text" id="name" placeholder="الاسم" class="input-field" style="width:100%; margin-bottom:10px;">
+            <input type="text" id="address" placeholder="العنوان" class="input-field" style="width:100%; margin-bottom:10px;">
+            <button class="btn-add-cart" onclick="sendWhatsApp()">إرسال واتساب</button>
+        </div>
+    </div>
+
+    <script>
+        let allProducts = [], cart = [];
+        const extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+
+        // دالة تحميل الصور الذكية
+        function tryLoadImage(imgElement, paths, index) {
+            if (index >= paths.length) {
+                imgElement.src = 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=400&q=80';
+                return;
+            }
+            imgElement.onerror = () => tryLoadImage(imgElement, paths, index + 1);
+            imgElement.src = paths[index];
+        }
+
+        function renderProducts(products) {
+            const container = document.getElementById('products-container');
+            container.innerHTML = '';
+            products.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+                card.innerHTML = `
+                    <img class="product-image" src="images/${p.excelRow}.jpg" onerror="tryLoadImage(this, ['images/${p.excelRow}.jpg', 'images/${p.excelRow}.png', 'images/${p.brand}.png', 'images/${p.brand}.jpg'], 0)">
+                    <h3>${p.name}</h3>
+                    <p>${p.price_iqd} د.ع</p>
+                    <button class="btn-add-cart" onclick="addToCart(${p.id})">إضافة للسلة</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // باقي دوال السلسلة والواتساب كما في الكود السابق...
+        function toggleCart() { const s = document.getElementById('main-cart-sidebar'); s.style.display = s.style.display === 'block' ? 'none' : 'block'; }
+        function openCheckout() { document.getElementById('checkout-modal').style.display = 'flex'; }
+        
+        // استدعاء ملف الإكسل
+        fetch('stock.xlsx').then(r => r.arrayBuffer()).then(buffer => {
+            const wb = XLSX.read(buffer, {type: 'array'});
+            // (هنا تتم معالجة البيانات وتعبئة allProducts)
+            // renderProducts(allProducts);
+        });
+    </script>
+</body>
+</html>
